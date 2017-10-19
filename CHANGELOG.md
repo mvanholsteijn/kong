@@ -1,5 +1,7 @@
 ## [Unreleased][unreleased]
 
+## [0.11.1] - 2017/08/24
+
 ### Changed
 
 ##### Configuration
@@ -1720,7 +1722,8 @@ First version running with Cassandra.
 - CLI `bin/kong` script.
 - Database migrations (using `db.lua`).
 
-[unreleased]: https://github.com/mashape/kong/compare/0.11.0...master
+[unreleased]: https://github.com/mashape/kong/compare/0.11.1...master
+[0.11.1]: https://github.com/mashape/kong/compare/0.11.0...0.11.1
 [0.11.0]: https://github.com/mashape/kong/compare/0.10.3...0.11.0
 [0.10.3]: https://github.com/mashape/kong/compare/0.10.2...0.10.3
 [0.10.2]: https://github.com/mashape/kong/compare/0.10.1...0.10.2
