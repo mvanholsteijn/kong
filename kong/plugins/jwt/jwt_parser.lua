@@ -274,6 +274,30 @@ function _M:verify_registered_claims(claims_to_verify)
   return errors == nil, errors
 end
 
+--- check the maximum expiration 
+-- @param maximum_expiration of the claim, or -1 if no expiration
+function _M:check_maximum_expiration(maximum_expiration)
+
+  if maximum_expiration <= 0 then
+     return true, nil
+  end
+  local exp = self.claims["exp"]
+  local nbf = self.claims["nbf"]
+  if exp and nbf then
+    if (exp - nbf) > maximum_expiration then
+      return false, {exp = "exceeds maximum expiration"}
+    end
+  else
+    if exp then
+      return false, {nbf = "is missing"}
+    else
+      return false, {exp = "is missing"}
+    end
+  end
+
+  return true, nil
+end
+
 _M.encode = encode_token
 
 return _M

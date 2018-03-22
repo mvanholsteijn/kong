@@ -1,4 +1,5 @@
 local utils = require "kong.tools.utils"
+local Errors = require "kong.dao.errors"
 
 local function check_user(anonymous)
   if anonymous == "" or utils.is_valid_uuid(anonymous) then
@@ -8,14 +9,42 @@ local function check_user(anonymous)
   return false, "the anonymous user must be empty or a valid uuid"
 end
 
+local function check_maximum_expiration_positive(v)
+  if v < -1 or v == 0 then
+    return false, "maximum_expiration should be -1 or greater than 0"
+  end
+  return true
+end
+
 return {
   no_consumer = true,
   fields = {
     uri_param_names = {type = "array", default = {"jwt"}},
+    cookie_names = {type = "array", default = {}},
     key_claim_name = {type = "string", default = "iss"},
     secret_is_base64 = {type = "boolean", default = false},
     claims_to_verify = {type = "array", enum = {"exp", "nbf"}},
     anonymous = {type = "string", default = "", func = check_user},
     run_on_preflight = {type = "boolean", default = true},
+    maximum_expiration = {type = "number", default = -1, func = check_maximum_expiration_positive},
   },
+  self_check = function(schema, plugin_t, dao, is_update)
+    if plugin_t.maximum_expiration > 0 then
+      local has_exp = false
+      local has_nbf = false
+      if plugin_t.claims_to_verify then
+	for index, value in ipairs(plugin_t.claims_to_verify) do
+	  has_nbf = has_nbf or value == "nbf"
+	  has_exp = has_exp or value == "exp"
+	end
+      end
+      if not has_exp then
+	 return false, Errors.schema "when you specify maximum_expiration, 'exp' must be in claims_to_verify"
+      end
+      if not has_nbf then
+	 return false, Errors.schema "when you specify maximum_expiration, 'nbf' must be in claims_to_verify"
+      end
+    end
+    return true
+  end
 }

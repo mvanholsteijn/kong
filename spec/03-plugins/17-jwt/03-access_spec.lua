@@ -20,7 +20,7 @@ describe("Plugin: jwt (access)", function()
 
     local apis = {}
 
-    for i = 1, 8 do
+    for i = 1, 10 do
       apis[i] = assert(helpers.dao.apis:insert({
         name         = "tests-jwt" .. i,
         hosts        = { "jwt" .. i .. ".com" },
@@ -68,6 +68,14 @@ describe("Plugin: jwt (access)", function()
     assert(pdao:insert({ name   = "jwt",
                          api_id = apis[8].id,
                          config = { run_on_preflight = false },
+                       }))
+    assert(pdao:insert({ name   = "jwt",
+                         api_id = apis[9].id,
+                         config = { cookie_names = { "silly", "crumble" } },
+                       }))
+    assert(pdao:insert({ name   = "jwt",
+                         api_id = apis[10].id,
+                         config = { claims_to_verify = {"nbf", "exp"}, maximum_expiration = 300 },
                        }))
 
     jwt_secret = assert(helpers.dao.jwt_secrets:insert {consumer_id = consumer1.id})
@@ -285,6 +293,39 @@ describe("Plugin: jwt (access)", function()
         path    = "/request/?token=" .. jwt,
         headers = {
           ["Host"] = "jwt2.com",
+        }
+      })
+      assert.res_status(200, res)
+    end)
+    it("returns 403 if the token exceeds the maximum_expiration limit", function()
+      local payload = {
+        iss = jwt_secret.key,
+        exp = os.time() + 3600,
+        nbf = os.time() - 30
+      }
+      local jwt = jwt_encoder.encode(payload, jwt_secret.secret)
+      local res = assert(proxy_client:send {
+        method = "GET",
+        path = "/request/?jwt=" .. jwt,
+        headers = {
+          ["Host"] = "jwt10.com"
+        }
+      })
+      local body = assert.res_status(403, res)
+      assert.equal('{"exp":"exceeds maximum expiration"}', body)
+    end)
+    it("accepts a JWT token within the maximum_expiration limit", function()
+      local payload = {
+        iss = jwt_secret.key,
+        exp = os.time() + 270,
+        nbf = os.time() - 30
+      }
+      local jwt = jwt_encoder.encode(payload, jwt_secret.secret)
+      local res = assert(proxy_client:send {
+        method = "GET",
+        path = "/request/?jwt=" .. jwt,
+        headers = {
+          ["Host"] = "jwt10.com"
         }
       })
       assert.res_status(200, res)
