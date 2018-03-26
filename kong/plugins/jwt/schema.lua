@@ -29,7 +29,7 @@ return {
     maximum_expiration = {type = "number", default = -1, func = check_maximum_expiration_positive},
   },
   self_check = function(schema, plugin_t, dao, is_update)
-    if plugin_t.maximum_expiration > 0 then
+    if plugin_t.maximum_expiration ~= nil and plugin_t.maximum_expiration > 0 then
       local has_exp = false
       if plugin_t.claims_to_verify then
 	for index, value in ipairs(plugin_t.claims_to_verify) do
