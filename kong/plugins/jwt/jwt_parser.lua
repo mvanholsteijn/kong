@@ -282,17 +282,12 @@ function _M:check_maximum_expiration(maximum_expiration)
      return true, nil
   end
   local exp = self.claims["exp"]
-  local nbf = self.claims["nbf"]
-  if exp and nbf then
-    if (exp - nbf) > maximum_expiration then
+  if exp then
+    if (exp - ngx_time()) > maximum_expiration then
       return false, {exp = "exceeds maximum expiration"}
     end
   else
-    if exp then
-      return false, {nbf = "is missing"}
-    else
       return false, {exp = "is missing"}
-    end
   end
 
   return true, nil

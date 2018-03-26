@@ -31,18 +31,13 @@ return {
   self_check = function(schema, plugin_t, dao, is_update)
     if plugin_t.maximum_expiration > 0 then
       local has_exp = false
-      local has_nbf = false
       if plugin_t.claims_to_verify then
 	for index, value in ipairs(plugin_t.claims_to_verify) do
-	  has_nbf = has_nbf or value == "nbf"
 	  has_exp = has_exp or value == "exp"
 	end
       end
       if not has_exp then
 	 return false, Errors.schema "when you specify maximum_expiration, 'exp' must be in claims_to_verify"
-      end
-      if not has_nbf then
-	 return false, Errors.schema "when you specify maximum_expiration, 'nbf' must be in claims_to_verify"
       end
     end
     return true
