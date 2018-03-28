@@ -203,24 +203,29 @@ local function validate_clock_skew(headers, date_header_name, allowed_clock_skew
   return true
 end
 
-local function validate_body(digest_recieved)
-  -- client doesnt want body validation
-  if not digest_recieved then
-    return true
-  end
-
+-- fix for https://github.com/Kong/kong/issues/3345 and https://github.com/Kong/kong/issues/3346
+-- at the time of this patch (29-mar-2018), we had on-going discussion with @shashiranjan84 and
+-- at it looks like he was not going to accept this fix.
+-- Not having this functionality complicates the configuration, the client code and metrics collection.
+local function validate_body(digest_received)
   req_read_body()
   local body = req_get_body_data()
-  -- request must have body as client sent a digest header
+
+  if not digest_received then
+    -- if there is no digest and no body, it is ok
+    return not body
+  end
+
   if not body then
-    return false
+    -- if no body, calculate sha-256 over 0 bytes
+    body = ''
   end
 
   local sha256 = resty_sha256:new()
   sha256:update(body)
   local digest_created = "SHA-256=" .. ngx_encode_base64(sha256:final())
 
-  return digest_created == digest_recieved
+  return digest_created == digest_received
 end
 
 local function load_consumer_into_memory(consumer_id, anonymous)
